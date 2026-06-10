@@ -5,7 +5,8 @@ from scipy.integrate import solve_ivp
 
 # Parámetros
 g = 9.81
-L = 1.0
+#largo de la cuerda
+L = 1.0 
 
 # Sistema del péndulo
 def pendulo(t, y):
