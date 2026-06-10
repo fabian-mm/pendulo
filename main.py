@@ -8,6 +8,8 @@ g = 9.81
 #largo de la cuerda
 L = 1.0 
 
+#practicar como subroi ramas 
+
 # Sistema del péndulo
 def pendulo(t, y):
     theta, omega = y
