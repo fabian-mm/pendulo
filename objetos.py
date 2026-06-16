@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+import time
 from matplotlib.animation import FuncAnimation
 from utils import leer_flotante,leer_angulo,leer_entero
 
@@ -59,11 +61,18 @@ class Solucion:
             method=self.metodo
             )
         
-        angulo = solucion.y[0]
+        fps =60
+        duracion = self.sistema.t_final - self.sistema.t_inicial
+        t_anim = np.linspace(self.sistema.t_inicial, self.sistema.t_final, int(duracion * fps))
+        
+        interp = interp1d(solucion.t, solucion.y[0])
+        angulo_anim = interp(t_anim)
+
+        
         longitud = self.sistema.longitud
-        pos_y =  -longitud*np.cos(angulo)
-        pos_x =  longitud*np.sin(angulo)
-        return solucion.t , pos_x , pos_y
+        pos_y =  -longitud*np.cos(angulo_anim)
+        pos_x =  longitud*np.sin(angulo_anim)
+        return t_anim , pos_x , pos_y
     
 
 class Visualizacion:
@@ -82,40 +91,48 @@ class Visualizacion:
         self.linea ,= self.ejes.plot([],[], 'o-' ,lw =2) 
         self.conteo_tiempo = self.ejes.text(0.05, 0.09, '', transform = self.ejes.transAxes) 
 
+        
+    def actualizar(self, frame):
+        import time
+        if not hasattr(self, 't_inicio_real') or self.t_inicio_real is None:
+            self.t_inicio_real = time.time()
+
+        t_transcurrido = time.time() - self.t_inicio_real
+        t_sim = self.tiempo[0] + t_transcurrido
+
+        if t_sim >= self.tiempo[-1]:
+            idx = len(self.tiempo) - 1
+        else:
+            idx = np.searchsorted(self.tiempo, t_sim)
+            idx = min(idx, len(self.tiempo) - 1)
+
+        self.linea.set_data([0, self.pos_x[idx]], [0, self.pos_y[idx]])
+        self.conteo_tiempo.set_text(f'Tiempo = {self.tiempo[idx]:.2f} s')
+        return self.linea, self.conteo_tiempo
+
     def reinicio(self):
+        self.t_inicio_real = None
         self.linea.set_data([], [])
         self.conteo_tiempo.set_text('')
-        return self.linea,  self.conteo_tiempo
-    
-    def actualizar(self,frame):
-        pos_x = self.pos_x[frame]
-        pos_y = self.pos_y[frame]
-        
-        self.linea.set_data([0, pos_x], [0, pos_y])
+        return self.linea, self.conteo_tiempo
 
-        self.conteo_tiempo.set_text(f'Tiempo = {self.tiempo[frame]:.2f} s')
-
-        return self.linea,  self.conteo_tiempo
-
-    def animar(self, intervalo=30):
+    def animar(self):
         self.animacion = FuncAnimation(
-            self.figura ,
-            self.actualizar ,
-            frames = len(self.tiempo)  ,
-            init_func= self.reinicio ,
-            blit = True ,
-            interval = intervalo
+            self.figura,
+            self.actualizar,
+            frames=len(self.tiempo),
+            init_func=self.reinicio,
+            blit=True,
+            interval=1000/60
         )
         plt.show()
         
 
-    
-
-        
-        
+            
+            
 
 
-         
+            
 
 
 
